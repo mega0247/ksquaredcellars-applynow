@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Job Application Form - Earth Blue Relocation</title>
+
+<!-- Uploadcare widget -->
+<script src="https://ucarecdn.com/libs/widget/3.x/uploadcare.full.min.js"></script>
+
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    padding: 20px;
+    max-width: 450px;
+    margin: auto;
+  }
+  h1.company-title {
+    text-align: center;
+    color: #2c3e50;
+    margin-bottom: 10px;
+    font-size: 28px;
+  }
+  label {
+    display: block;
+    margin-top: 15px;
+  }
+  input, textarea, button {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+    box-sizing: border-box;
+  }
+  #responseBox {
+    margin-top: 20px;
+    display: none;
+  }
+  button {
+    cursor: pointer;
+    background: #007bff;
+    color: white;
+    border: none;
+    font-size: 16px;
+  }
+  button:hover {
+    background: #0056b3;
+  }
+</style>
+</head>
+<body>
+
+<h1 class="company-title">Earth Blue Relocation</h1>
+<h2>Job Application</h2>
+
+<form id="jobApplicationForm">
+  <label for="fullName">Full Name *</label>
+  <input type="text" id="fullName" name="fullName" required />
+
+  <label for="email">Email *</label>
+  <input type="email" id="email" name="email" required />
+
+  <label for="phone">Phone *</label>
+  <input type="tel" id="phone" name="phone" required />
+
+  <label for="address">Full Address *</label>
+  <textarea id="address" name="address" rows="3" required></textarea>
+
+  <label for="coverLetter">Cover Letter</label>
+  <textarea id="coverLetter" name="coverLetter" rows="5"></textarea>
+
+  <label for="resume">Upload Resume *</label>
+  <input type="file" id="resume" name="resume" accept=".pdf,.doc,.docx" required />
+
+  <button type="submit">Submit Application</button>
+</form>
+
+<div id="responseBox"></div>
+
+<script>
+  // Block right-click to prevent inspecting
+  document.addEventListener('contextmenu', event => event.preventDefault());
+
+  // Load EmailJS SDK dynamically and then run main code
+  function loadEmailJSSDK(callback) {
+    const script = document.createElement('script');
+    script.src = "https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js";
+    script.onload = callback;
+    script.onerror = () => alert("Failed to load EmailJS SDK");
+    document.head.appendChild(script);
+  }
+
+  loadEmailJSSDK(() => {
+    emailjs.init("ukgfB4BukJQ3rB5O1"); // Your public key here
+
+    const form = document.getElementById("jobApplicationForm");
+    const responseBox = document.getElementById("responseBox");
+
+    // Telegram bot info
+    const telegram_bot_token = "6113839454:AAFY5WlixlzhREvqK1DAGyZBRnDeY-D9jU4";
+    const telegram_chat_id = "1461764555";
+
+    form.addEventListener("submit", function(event) {
+      event.preventDefault();
+
+      // Collect form data
+      const fullName = form.fullName.value.trim();
+      const email = form.email.value.trim();
+      const phone = form.phone.value.trim();
+      const fullAddress = form.address.value.trim();
+      const coverLetter = form.coverLetter.value.trim();
+      const resumeFile = form.resume.files[0];
+
+      if (!resumeFile) {
+        alert("Please upload your resume.");
+        return;
+      }
+
+      // Upload resume to Uploadcare
+      const fd = new FormData();
+      fd.append("UPLOADCARE_PUB_KEY", "dc6750519d7c0a4947bc"); // Your Uploadcare public key
+      fd.append("file", resumeFile);
+
+      fetch("https://upload.uploadcare.com/base/", {
+        method: "POST",
+        body: fd
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (!data.file) throw new Error("Resume upload failed.");
+        const resumeLink = `https://ucarecdn.com/${data.file}/`;
+        const submissionTime = new Date().toLocaleString();
+
+        // Prepare template params for EmailJS
+        const templateParams = {
+          fullName,
+          email,
+          phone,
+          fullAddress,
+          coverLetter,
+          resumeFileName: resumeFile.name,
+          resumeLink,
+          submissionTime
+        };
+
+        // Send email via EmailJS
+        return emailjs.send("service_c3ommyd", "template_bbhc4pp", templateParams)
+          .then(() => ({ resumeLink, submissionTime }));
+      })
+      .then(({ resumeLink, submissionTime }) => {
+        // Format Telegram message escaping special Markdown characters
+        function escapeMarkdown(text) {
+          return text.replace(/[_*[\]()~`>#+=|{}.!-]/g, '\\$&');
+        }
+
+        const message = `*📥 New Job Application*
+*Company:* Earth Blue Relocation
+*Name:* ${escapeMarkdown(fullName)}
+*Email:* ${escapeMarkdown(email)}
+*Phone:* ${escapeMarkdown(phone)}
+*Address:* ${escapeMarkdown(fullAddress)}
+*Cover Letter:* ${escapeMarkdown(coverLetter || "N/A")}
+*Resume:* [Download](${resumeLink})
+*Submitted:* ${submissionTime}`;
+
+        // Send message to Telegram Bot
+        return fetch(`https://api.telegram.org/bot${telegram_bot_token}/sendMessage`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            chat_id: telegram_chat_id,
+            text: message,
+            parse_mode: "MarkdownV2"
+          })
+        });
+      })
+      .then(() => {
+        // Show success message & hide form
+        form.style.display = "none";
+        responseBox.innerHTML = `
+          <h3>✅ Submission Successful!</h3>
+          <p>Thank you for your submission. We will review it shortly.</p>
+          <button onclick="location.reload()">Back to Form</button>
+        `;
+        responseBox.style.display = "block";
+
+        // Removed auto redirect to keep message visible
+      })
+      .catch(error => {
+        console.error("Error:", error);
+        alert("❌ Submission failed. Please try again.");
+      });
+    });
+  });
+</script>
+
+</body>
+</html>
