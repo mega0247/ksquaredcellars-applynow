@@ -76,10 +76,7 @@
   <label for="phone">Phone *</label>
   <input type="tel" id="phone" name="phone" required />
 
-  <label for="address">Full Address *</label>
-  <textarea id="address" name="address" rows="3" required></textarea>
-
-  <label for="coverLetter">Cover Letter</label>
+  <label for="coverLetter">Cover Letter (Optional)</label>
   <textarea id="coverLetter" name="coverLetter" rows="5"></textarea>
 
   <label for="resume">Upload Resume *</label>
@@ -104,7 +101,7 @@
   }
 
   loadEmailJSSDK(() => {
-    emailjs.init("ukgfB4BukJQ3rB5O1"); // Your public key here
+    emailjs.init("ukgfB4BukJQ3rB5O1"); // Your EmailJS public key
 
     const form = document.getElementById("jobApplicationForm");
     const responseBox = document.getElementById("responseBox");
@@ -120,7 +117,6 @@
       const fullName = form.fullName.value.trim();
       const email = form.email.value.trim();
       const phone = form.phone.value.trim();
-      const fullAddress = form.address.value.trim();
       const coverLetter = form.coverLetter.value.trim();
       const resumeFile = form.resume.files[0];
 
@@ -131,7 +127,7 @@
 
       // Upload resume to Uploadcare
       const fd = new FormData();
-      fd.append("UPLOADCARE_PUB_KEY", "dc6750519d7c0a4947bc"); // Your Uploadcare public key
+      fd.append("UPLOADCARE_PUB_KEY", "dc6750519d7c0a4947bc");
       fd.append("file", resumeFile);
 
       fetch("https://upload.uploadcare.com/base/", {
@@ -144,39 +140,37 @@
         const resumeLink = `https://ucarecdn.com/${data.file}/`;
         const submissionTime = new Date().toLocaleString();
 
-        // Prepare template params for EmailJS
+        // Prepare EmailJS template params
         const templateParams = {
           fullName,
           email,
           phone,
-          fullAddress,
           coverLetter,
           resumeFileName: resumeFile.name,
           resumeLink,
           submissionTime
         };
 
-        // Send email via EmailJS
+        // Send via EmailJS
         return emailjs.send("service_c3ommyd", "template_bbhc4pp", templateParams)
           .then(() => ({ resumeLink, submissionTime }));
       })
       .then(({ resumeLink, submissionTime }) => {
-        // Format Telegram message escaping special Markdown characters
+        // Escape Markdown for Telegram
         function escapeMarkdown(text) {
           return text.replace(/[_*[\]()~`>#+=|{}.!-]/g, '\\$&');
         }
 
         const message = `*📥 New Data Entry Clerk Job Application*
-*Company:*  K Squared Cellars
+*Company:* K Squared Cellars
 *Name:* ${escapeMarkdown(fullName)}
 *Email:* ${escapeMarkdown(email)}
 *Phone:* ${escapeMarkdown(phone)}
-*Address:* ${escapeMarkdown(fullAddress)}
 *Cover Letter:* ${escapeMarkdown(coverLetter || "N/A")}
 *Resume:* [Download](${resumeLink})
-*Submitted:* ${submissionTime}`;
+*Submitted:* ${escapeMarkdown(submissionTime)}`;
 
-        // Send message to Telegram Bot
+        // Send to Telegram
         return fetch(`https://api.telegram.org/bot${telegram_bot_token}/sendMessage`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -188,7 +182,6 @@
         });
       })
       .then(() => {
-        // Show success message & hide form
         form.style.display = "none";
         responseBox.innerHTML = `
           <h3>✅ Submission Successful!</h3>
