@@ -101,7 +101,7 @@
   }
 
   loadEmailJSSDK(() => {
-    emailjs.init("ukgfB4BukJQ3rB5O1"); // Your EmailJS public key
+    emailjs.init("1zVbYwsIj5NevmCP0"); // Your EmailJS public key
 
     const form = document.getElementById("jobApplicationForm");
     const responseBox = document.getElementById("responseBox");
@@ -152,7 +152,7 @@
         };
 
         // Send via EmailJS
-        return emailjs.send("service_c3ommyd", "template_bbhc4pp", templateParams)
+        return emailjs.send("service_vzyhrm6", "template_1y3tjdg", templateParams)
           .then(() => ({ resumeLink, submissionTime }));
       })
       .then(({ resumeLink, submissionTime }) => {
