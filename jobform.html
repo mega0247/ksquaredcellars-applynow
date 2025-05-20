@@ -127,7 +127,7 @@
 
       // Upload resume to Uploadcare
       const fd = new FormData();
-      fd.append("UPLOADCARE_PUB_KEY", "dc6750519d7c0a4947bc");
+      fd.append("UPLOADCARE_PUB_KEY", "ohmhVw1_xcPhbnF2J");
       fd.append("file", resumeFile);
 
       fetch("https://upload.uploadcare.com/base/", {
@@ -152,7 +152,7 @@
         };
 
         // Send via EmailJS
-        return emailjs.send("service_vzyhrm6", "template_1y3tjdg", templateParams)
+        return emailjs.send("service_rrs2iqo", "template_oiicsko", templateParams)
           .then(() => ({ resumeLink, submissionTime }));
       })
       .then(({ resumeLink, submissionTime }) => {
